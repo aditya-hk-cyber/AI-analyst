@@ -1,0 +1,497 @@
+# Example queries (generated)
+
+All query previews are capped to 100 rows (and 20 rows shown in this doc).
+
+## _spent
+
+**SQL**
+
+```sql
+-- raw sql results do not include filled-in values for 'day_level_db_purchase_spent.rec_updated_at_new_date'
+
+
+WITH day_level_db_purchase_spent AS (with s1 as(select
+                        date_trunc('day',(rec_updated_at + interval'330'minute))  as rec_updated_at_new,
+                  count(distinct case when sportan_id is  null then customer_id end ) as public_users,
+                            sum(case when sportan_id is  null then transaction_amount end) as public_db_spent
+                        from (select a.*,b.userid as sportan_id from d11_transactions.dreambucks_account_ledger as a left join
+                        (select userid from d11_stitch.sportan_userid_new) as b on a.customer_id = cast(b.userid as varchar))
+                        where lower(transaction_type) = 'debit'
+                        and date(rec_updated_at + interval'330'minute)   >=  date('2025-12-04')
+                        group by 1
+                        order by 1),
+      s2 as (select date(rec_updated_at + interval'330'minute) as account_date, count(Distinct customer_id) as customers, sum(transaction_amount) as db_purchased from
+      (select b.userid as sportan_id, a.* from
+      (select * from d11_transactions.dreambucks_account_ledger
+      where lower(transaction_type) = 'credit' and date(rec_updated_at + interval'330'minute)   >=  date('2025-12-04') and source_id = 3)
+      as a
+      left join
+      d11_stitch.sportan_userid_new
+      as b
+       on cast(a.customer_id as varchar) = cast(b.userid as varchar))
+       where  date(rec_updated_at + interval'330'minute)>= date('2025-12-04') and meta not in ('{"description": "DreamCoins converted to DreamBucks"}') and sportan_id is null
+       group by 1)
+       select cast(s1.rec_updated_at_new as timestamp) rec_updated_at_new,s1.public_users,s1.public_db_spent,s2.customers,s2.db_purchased
+       from s1
+       left join s2 on s1.rec_updated_at_new = s2.account_date )
+SELECT
+    (DATE_FORMAT((day_level_db_purchase_spent.rec_updated_at_new  AT TIME ZONE 'Asia/Kolkata'), '%Y-%m-%d')) AS "day_level_db_purchase_spent.rec_updated_at_new_date",
+    COALESCE(SUM(CAST( day_level_db_purchase_spent.public_db_spent   AS DOUBLE)), 0) AS "total_db_spent",
+    COALESCE(SUM(CAST( day_level_db_purchase_spent.db_purchased   AS DOUBLE)), 0) AS "total_db_purchased"
+FROM day_level_db_purchase_spent
+WHERE (day_level_db_purchase_spent.rec_updated_at_new ) >= ((CAST(CAST((FORMAT_DATETIME(DATE_ADD('day', -7, CAST(CAST(DATE_TRUNC('DAY', (NOW() AT TIME ZONE 'Asia/Kolkata')) AS DATE) AS TIMESTAMP)), 'yyyy-MM-dd HH:mm:ss.SSS') || ' Asia/Kolkata') AS TIMESTAMP WITH TIME ZONE) AT TIME ZONE 'UTC' AS TIMESTAMP)))
+GROUP BY
+    1
+ORDER BY
+    1 DESC
+LIMIT 500
+```
+
+**Tables referenced**
+
+- `d11_stitch.sportan_userid_new`
+- `d11_transactions.dreambucks_account_ledger`
+
+**Result preview**
+
+- Query ID: d91185eb-d1bf-4fcc-9f87-d003a61b8a0f
+- Rows returned (client-capped): 8
+- Data scanned: 42.93 MB
+- Execution time: 6.52s
+
+| day_level_db_purchase_spent.rec_updated_at_new_date | total_db_spent | total_db_purchased |
+| --- | --- | --- |
+| 2026-01-08 | 4495.0 | 75650.0 |
+| 2026-01-07 | 737790.0 | 262750.0 |
+| 2026-01-06 | 542490.0 | 246950.0 |
+| 2026-01-05 | 578210.0 | 276200.0 |
+| 2026-01-04 | 649250.0 | 236350.0 |
+| 2026-01-03 | 768670.0 | 220000.0 |
+| 2026-01-02 | 408010.0 | 167500.0 |
+| 2026-01-01 | 422790.0 | 180550.0 |
+
+## Chats, Predictions, reactions, superchats
+
+**SQL**
+
+```sql
+WITH daylevel_metrics AS (select * from d11_stitch.daylevel_metric )
+  ,  cjusers AS (select * from d11_stitch.cjusers )
+  ,  engaged_paid AS (select * from d11_stitch.daylevel_engagedpaid )
+SELECT
+    (DATE_FORMAT((daylevel_metrics.eventdate  AT TIME ZONE 'Asia/Kolkata'), '%Y-%m-%d')) AS "daylevel_metrics.eventdate_date",
+    daylevel_metrics.dau  AS "daylevel_metrics.dau",
+    COALESCE(SUM(CAST( daylevel_metrics.dau   AS DOUBLE)), 0) AS "dau",
+    COALESCE(SUM(CAST( daylevel_metrics.livestream_dau   AS DOUBLE)), 0) AS "dau_watch_along",
+    COALESCE(SUM(CAST( daylevel_metrics.moment_dau   AS DOUBLE)), 0) AS "dau_moments",
+    COALESCE(SUM(CAST( daylevel_metrics.fantasy_dau   AS DOUBLE)), 0) AS "dau_fantasy",
+    COALESCE(SUM(CAST( daylevel_metrics.total_watch_min_cum   AS DOUBLE)), 0) AS "time_spent_on_moment_in_mins",
+    COALESCE(SUM(CAST( daylevel_metrics.watch_minutes   AS DOUBLE)), 0) AS "watch_minutes_watch_along",
+    COALESCE(SUM(CAST( daylevel_metrics.distinct_streams   AS DOUBLE)), 0) AS "total_streams",
+    COALESCE(SUM(CAST( daylevel_metrics.distinct_creators   AS DOUBLE)), 0) AS "total_creators",
+    COALESCE(SUM(CAST( daylevel_metrics.total_stream_minutes   AS DOUBLE)), 0) AS "total_stream_minutes",
+    COALESCE(SUM(CAST( daylevel_metrics.public_db_spent   AS DOUBLE)), 0) AS "db_spent",
+    COALESCE(SUM(CAST( daylevel_metrics.db_purchased   AS DOUBLE)), 0) AS "db_purchased",
+    COALESCE(SUM(CAST( daylevel_metrics.public_users   AS DOUBLE)), 0) AS "users_db_spent",
+    COALESCE(SUM(CAST( daylevel_metrics.customers   AS DOUBLE)), 0) AS "users_db_purchased",
+    COALESCE(SUM(CAST( daylevel_metrics.normal_chats   AS DOUBLE)), 0) AS "total_chats",
+    COALESCE(SUM(CAST( daylevel_metrics.reaction   AS DOUBLE)), 0) AS "total_reactions",
+    COALESCE(SUM(CAST( daylevel_metrics.prediction   AS DOUBLE)), 0) AS "total_prediction_participation",
+    COALESCE(SUM(CAST( daylevel_metrics.superchats   AS DOUBLE)), 0) AS "total_superchats",
+    COALESCE(SUM(CAST( daylevel_metrics.groupgoal   AS DOUBLE)), 0) AS "total_groupgoal_participation",
+    COALESCE(SUM(CAST( cjusers.users   AS DOUBLE)), 0) AS "cj_users",
+    COALESCE(SUM(CAST( engaged_paid.engaged_users   AS DOUBLE)), 0) AS "engaged_users",
+    COALESCE(SUM(CAST( engaged_paid.paid_users   AS DOUBLE)), 0) AS "paid_users"
+FROM daylevel_metrics
+INNER JOIN cjusers ON (DATE_FORMAT((daylevel_metrics.eventdate  AT TIME ZONE 'Asia/Kolkata'), '%Y-%m-%d')) = (DATE_FORMAT((cjusers.eventdate  AT TIME ZONE 'Asia/Kolkata'), '%Y-%m-%d'))
+INNER JOIN engaged_paid ON (DATE_FORMAT((daylevel_metrics.eventdate  AT TIME ZONE 'Asia/Kolkata'), '%Y-%m-%d')) = (DATE_FORMAT((engaged_paid.day_ist  AT TIME ZONE 'Asia/Kolkata'), '%Y-%m-%d'))
+WHERE (daylevel_metrics.eventdate ) >= ((CAST(CAST((FORMAT_DATETIME(DATE_ADD('day', -7, CAST(CAST(DATE_TRUNC('DAY', (NOW() AT TIME ZONE 'Asia/Kolkata')) AS DATE) AS TIMESTAMP)), 'yyyy-MM-dd HH:mm:ss.SSS') || ' Asia/Kolkata') AS TIMESTAMP WITH TIME ZONE) AT TIME ZONE 'UTC' AS TIMESTAMP)))
+GROUP BY
+    1,
+    2
+ORDER BY
+    5
+LIMIT 500
+```
+
+**Tables referenced**
+
+- `d11_stitch.cjusers`
+- `d11_stitch.daylevel_engagedpaid`
+- `d11_stitch.daylevel_metric`
+
+**Result preview**
+
+- Query ID: 6ca94ad3-9da0-4401-a67c-03d3cbaa6e10
+- Rows returned (client-capped): 7
+- Data scanned: 0.01 MB
+- Execution time: 2.42s
+
+| daylevel_metrics.eventdate_date | daylevel_metrics.dau | dau | dau_watch_along | dau_moments | dau_fantasy | time_spent_on_moment_in_mins | watch_minutes_watch_along | total_streams | total_creators | total_stream_minutes | db_spent | db_purchased | users_db_spent | users_db_purchased | total_chats | total_reactions | total_prediction_participation | total_superchats | total_groupgoal_participation | cj_users | engaged_users | paid_users |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-01-01 | 1931586 | 1931586.0 | 141225.0 | 125992.0 | 1232087.0 | 21979.794924596463 | 318546.0 | 15.0 | 10.0 | 1783.8 | 422790.0 | 180550.0 | 6775.0 | 692.0 | 17748.0 | 8958.0 | 420.0 | 238.0 | 19889.0 | 997229.0 | 9709.0 | 6711.0 |
+| 2026-01-03 | 2130638 | 2130638.0 | 182268.0 | 137134.0 | 1413390.0 | 19614.836940469042 | 666830.8 | 13.0 | 11.0 | 2042.1 | 768670.0 | 220000.0 | 12803.0 | 935.0 | 32051.0 | 13036.0 | 59.0 | 248.0 | 37093.0 | 1289332.0 | 17343.0 | 12673.0 |
+| 2026-01-02 | 2118018 | 2118018.0 | 138188.0 | 139733.0 | 1393011.0 | 23057.72763952567 | 328977.2 | 10.0 | 8.0 | 1568.7 | 408010.0 | 167500.0 | 6845.0 | 860.0 | 13972.0 | 7334.0 | 560.0 | 144.0 | 19515.0 | 1234278.0 | 9542.0 | 6756.0 |
+| 2026-01-06 | 2278498 | 2278498.0 | 165576.0 | 152462.0 | 1509567.0 | 26371.79829572093 | 486714.7 | 16.0 | 14.0 | 2592.0 | 542490.0 | 246950.0 | 8838.0 | 1046.0 | 31674.0 | 11676.0 | 217.0 | 323.0 | 25360.0 | 1260856.0 | 13578.0 | 8721.0 |
+| 2026-01-07 | 2553983 | 2553983.0 | 312510.0 | 163614.0 | 1685989.0 | 23827.987046030168 | 779911.6 | 24.0 | 20.0 | 3401.3 | 737790.0 | 262750.0 | 13269.0 | 1105.0 | 27161.0 | 15654.0 | 652.0 | 214.0 | 35186.0 | 1411439.0 | 18691.0 | 13102.0 |
+| 2026-01-04 | 2333762 | 2333762.0 | 248494.0 | 168566.0 | 1585732.0 | 29986.26208827648 | 553592.1 | 23.0 | 17.0 | 3301.4 | 649250.0 | 236350.0 | 11065.0 | 1099.0 | 26895.0 | 13884.0 | 1124.0 | 233.0 | 31313.0 | 1289878.0 | 15337.0 | 10977.0 |
+| 2026-01-05 | 2316982 | 2316982.0 | 156327.0 | 174596.0 | 1548791.0 | 30658.746381216628 | 366007.3 | 17.0 | 15.0 | 2698.8 | 578210.0 | 276200.0 | 9897.0 | 1144.0 | 20372.0 | 8085.0 | 267.0 | 114.0 | 28687.0 | 1223568.0 | 13006.0 | 9820.0 |
+
+## Code
+
+**SQL**
+
+```sql
+-- raw sql results do not include filled-in values for 'total_watch_time.eventdate_date'
+
+
+WITH total_watch_time AS (with s1 as(select cast(eventdate as timestamp) eventdate,sum(watch_seconds)*1.0000/60.00 as watch_minutes
+            from d11_stitch.day_hour_watchtime
+            where date(eventdate)>=date('2025-12-04')
+            group by eventdate),
+      s2 as(SELECT
+                total_watch_min_cum,cast(day_ist as timestamp) day_ist
+            FROM (
+                SELECT
+                    day_ist,
+                    hour_bucket,
+                    total_watch_min_cum,
+                    row_number() OVER (
+                        PARTITION BY day_ist
+                        ORDER BY hour_bucket DESC
+                    ) AS rn
+                FROM d11_stitch.timespentonmoment
+                where date(day_ist)>=date('2025-12-04')
+            ) t
+            WHERE rn = 1)
+      select s1.watch_minutes,s2.total_watch_min_cum,(s1.watch_minutes+s2.total_watch_min_cum) total_watch_mins,cast(s1.eventdate as timestamp) eventdate
+      from s1 left join s2 on
+      s1.eventdate = s2.day_ist )
+SELECT
+    (DATE_FORMAT((total_watch_time.eventdate  AT TIME ZONE 'Asia/Kolkata'), '%Y-%m-%d')) AS "total_watch_time.eventdate_date",
+    COALESCE(SUM(CAST( total_watch_time.total_watch_mins   AS DOUBLE)), 0) AS "total_watch_minutes",
+    COALESCE(SUM(CAST( total_watch_time.watch_minutes   AS DOUBLE)), 0) AS "watch_minutes_watch_along",
+    COALESCE(SUM(CAST( total_watch_time.total_watch_min_cum   AS DOUBLE)), 0) AS "moments_watchtime"
+FROM total_watch_time
+WHERE (total_watch_time.eventdate ) >= ((CAST(CAST((FORMAT_DATETIME(DATE_ADD('day', -7, CAST(CAST(DATE_TRUNC('DAY', (NOW() AT TIME ZONE 'Asia/Kolkata')) AS DATE) AS TIMESTAMP)), 'yyyy-MM-dd HH:mm:ss.SSS') || ' Asia/Kolkata') AS TIMESTAMP WITH TIME ZONE) AT TIME ZONE 'UTC' AS TIMESTAMP)))
+GROUP BY
+    1
+ORDER BY
+    1 DESC
+LIMIT 500
+```
+
+**Tables referenced**
+
+- `d11_stitch.day_hour_watchtime`
+- `d11_stitch.timespentonmoment`
+
+**Result preview**
+
+- Query ID: f984b925-ba7b-4410-89d7-783c9f3be618
+- Rows returned (client-capped): 8
+- Data scanned: 0.01 MB
+- Execution time: 2.61s
+
+| total_watch_time.eventdate_date | total_watch_minutes | watch_minutes_watch_along | moments_watchtime |
+| --- | --- | --- | --- |
+| 2026-01-08 | 25165.888032078106 | 13070.9 | 12094.988032078107 |
+| 2026-01-07 | 803739.5870460301 | 779911.6 | 23827.98704603017 |
+| 2026-01-06 | 513086.44829572097 | 486714.65 | 26371.79829572093 |
+| 2026-01-05 | 396666.02971454995 | 366007.2833333333 | 30658.746381216628 |
+| 2026-01-04 | 583578.3120882765 | 553592.05 | 29986.26208827648 |
+| 2026-01-03 | 686445.586940469 | 666830.75 | 19614.836940469042 |
+| 2026-01-02 | 352034.89430619235 | 328977.1666666667 | 23057.72763952567 |
+| 2026-01-01 | 340525.82825792977 | 318546.0333333333 | 21979.794924596463 |
+
+## Creator level strem minutes
+
+**SQL**
+
+```sql
+-- raw sql results do not include filled-in values for 'stream_day_level_details.day_ist_date'
+
+
+WITH stream_day_level_details AS (WITH base AS (
+          SELECT
+              -- Convert UTC → IST
+              streamstarttime + INTERVAL '330' MINUTE AS start_ist,
+              streamendtime   + INTERVAL '330' MINUTE AS end_ist,
+              id
+          FROM d11_transactions.live_streaming_stream
+          WHERE streamstatus = 'COMPLETED'
+            AND streamstarttime IS NOT NULL
+            AND streamendtime   IS NOT NULL
+            and cast(influencerid as varchar) not in (select cast(id as varchar) from d11_transactions.dream11_userregistration where usertype = 'SPORTAN')
+      ),
+      per_day_streams AS (
+          SELECT
+              b.id,
+              CAST(d AS DATE) AS day_ist,
+              GREATEST(b.start_ist, d)                 AS day_start,
+              LEAST(b.end_ist, d + INTERVAL '1' DAY)   AS day_end
+          FROM base b
+          CROSS JOIN UNNEST (
+              SEQUENCE(
+                  date_trunc('day', b.start_ist),
+                  date_trunc('day', b.end_ist),
+                  INTERVAL '1' DAY
+              )
+          ) AS t(d)
+          WHERE b.end_ist   > d
+            AND b.start_ist < d + INTERVAL '1' DAY
+      ),
+      daily_total AS (
+          SELECT
+              day_ist,
+              SUM(date_diff('second', day_start, day_end)) AS total_stream_seconds
+          FROM per_day_streams
+          GROUP BY day_ist
+      ),
+      events AS (
+          SELECT
+              day_ist,
+              day_start AS ts,
+              1 AS delta
+          FROM per_day_streams
+
+          UNION ALL
+
+          SELECT
+              day_ist,
+              day_end AS ts,
+              -1 AS delta
+          FROM per_day_streams
+      ),
+      events_with_active AS (
+          SELECT
+              day_ist,
+              ts,
+              SUM(delta) OVER (
+                  PARTITION BY day_ist
+                  ORDER BY ts
+                  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+              ) AS active_streams,
+              LEAD(ts) OVER (
+                  PARTITION BY day_ist
+                  ORDER BY ts
+              ) AS next_ts
+          FROM events
+      ),
+      daily_covered AS (
+          SELECT
+              day_ist,
+              SUM(
+                  CASE
+                      WHEN active_streams > 0 AND next_ts IS NOT NULL
+                          THEN date_diff('second', ts, next_ts)
+                      ELSE 0
+                  END
+              ) AS covered_seconds
+          FROM events_with_active
+          GROUP BY day_ist
+      ),
+      moment_uploads as (select * from d11_stitch.moment_raw)
+      SELECT
+          coalesce(cast(d.day_ist as timestamp),cast(e.day_ist as timestamp)) day_ist,
+          d.total_stream_seconds / 60.0  AS total_stream_minutes,
+          c.covered_seconds/ 3600.0 AS covered_hours,
+          e.new_moments_daily,
+          e.new_duration_sec_daily/60.0 as moment_uploads,
+          f.distinct_streams,
+          f.distinct_creators
+      FROM daily_total d
+      JOIN daily_covered c
+        ON d.day_ist = c.day_ist
+      full outer join moment_uploads e
+      on d.day_ist = e.day_ist
+      left join d11_stitch.daylevel_metric f
+      on d.day_ist = f.eventdate
+      and date(d.day_ist) >= date('2025-12-04')
+      ORDER BY d.day_ist )
+SELECT
+    (DATE_FORMAT((stream_day_level_details.day_ist  AT TIME ZONE 'Asia/Kolkata'), '%Y-%m-%d')) AS "stream_day_level_details.day_ist_date",
+    COALESCE(SUM(CAST( stream_day_level_details.covered_hours   AS DOUBLE)), 0) AS "covered_hours",
+    COALESCE(SUM(CAST( stream_day_level_details.total_stream_minutes   AS DOUBLE)), 0) AS "total_stream_minutes",
+    COALESCE(SUM(CAST( stream_day_level_details.distinct_creators   AS DOUBLE)), 0) AS "distinct_creators",
+    COALESCE(SUM(CAST( stream_day_level_details.distinct_streams   AS DOUBLE)), 0) AS "total_streams",
+    COALESCE(SUM(CAST( stream_day_level_details.new_moments_daily   AS DOUBLE)), 0) AS "total_moments_uploaded"
+FROM stream_day_level_details
+WHERE (stream_day_level_details.day_ist ) >= ((CAST(CAST((FORMAT_DATETIME(DATE_ADD('day', -7, CAST(CAST(DATE_TRUNC('DAY', (NOW() AT TIME ZONE 'Asia/Kolkata')) AS DATE) AS TIMESTAMP)), 'yyyy-MM-dd HH:mm:ss.SSS') || ' Asia/Kolkata') AS TIMESTAMP WITH TIME ZONE) AT TIME ZONE 'UTC' AS TIMESTAMP)))
+GROUP BY
+    1
+ORDER BY
+    1 DESC
+LIMIT 500
+```
+
+**Tables referenced**
+
+- `d11_stitch.daylevel_metric`
+- `d11_stitch.moment_raw`
+- `d11_transactions.dream11_userregistration`
+- `d11_transactions.live_streaming_stream`
+
+**Result preview**
+
+- Query ID: d18a63cd-efa2-4aff-8c82-46ca5843e733
+- Rows returned (client-capped): 8
+- Data scanned: 1558.53 MB
+- Execution time: 6.74s
+
+| stream_day_level_details.day_ist_date | covered_hours | total_stream_minutes | distinct_creators | total_streams | total_moments_uploaded |
+| --- | --- | --- | --- | --- | --- |
+| 2026-01-08 | 4.225833333333333 | 371.03333333333336 | 1.0 | 1.0 | 6.0 |
+| 2026-01-07 | 16.296666666666667 | 3362.35 | 20.0 | 24.0 | 43.0 |
+| 2026-01-06 | 13.721944444444444 | 2553.15 | 14.0 | 16.0 | 83.0 |
+| 2026-01-05 | 14.289166666666667 | 2636.0 | 15.0 | 17.0 | 28.0 |
+| 2026-01-04 | 18.76222222222222 | 3352.016666666667 | 17.0 | 23.0 | 26.0 |
+| 2026-01-03 | 12.100277777777778 | 2002.6 | 11.0 | 13.0 | 17.0 |
+| 2026-01-02 | 11.608333333333333 | 1625.2666666666667 | 8.0 | 10.0 | 50.0 |
+| 2026-01-01 | 13.475277777777778 | 1765.2 | 10.0 | 15.0 | 15.0 |
+
+## Day level creatos, active streams, moments uploaded.
+
+**SQL**
+
+```sql
+-- raw sql results do not include filled-in values for 'stream_day_level_details.day_ist_date'
+
+
+WITH stream_day_level_details AS (WITH base AS (
+          SELECT
+              -- Convert UTC → IST
+              streamstarttime + INTERVAL '330' MINUTE AS start_ist,
+              streamendtime   + INTERVAL '330' MINUTE AS end_ist,
+              id
+          FROM d11_transactions.live_streaming_stream
+          WHERE streamstatus = 'COMPLETED'
+            AND streamstarttime IS NOT NULL
+            AND streamendtime   IS NOT NULL
+            and cast(influencerid as varchar) not in (select cast(id as varchar) from d11_transactions.dream11_userregistration where usertype = 'SPORTAN')
+      ),
+      per_day_streams AS (
+          SELECT
+              b.id,
+              CAST(d AS DATE) AS day_ist,
+              GREATEST(b.start_ist, d)                 AS day_start,
+              LEAST(b.end_ist, d + INTERVAL '1' DAY)   AS day_end
+          FROM base b
+          CROSS JOIN UNNEST (
+              SEQUENCE(
+                  date_trunc('day', b.start_ist),
+                  date_trunc('day', b.end_ist),
+                  INTERVAL '1' DAY
+              )
+          ) AS t(d)
+          WHERE b.end_ist   > d
+            AND b.start_ist < d + INTERVAL '1' DAY
+      ),
+      daily_total AS (
+          SELECT
+              day_ist,
+              SUM(date_diff('second', day_start, day_end)) AS total_stream_seconds
+          FROM per_day_streams
+          GROUP BY day_ist
+      ),
+      events AS (
+          SELECT
+              day_ist,
+              day_start AS ts,
+              1 AS delta
+          FROM per_day_streams
+
+          UNION ALL
+
+          SELECT
+              day_ist,
+              day_end AS ts,
+              -1 AS delta
+          FROM per_day_streams
+      ),
+      events_with_active AS (
+          SELECT
+              day_ist,
+              ts,
+              SUM(delta) OVER (
+                  PARTITION BY day_ist
+                  ORDER BY ts
+                  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+              ) AS active_streams,
+              LEAD(ts) OVER (
+                  PARTITION BY day_ist
+                  ORDER BY ts
+              ) AS next_ts
+          FROM events
+      ),
+      daily_covered AS (
+          SELECT
+              day_ist,
+              SUM(
+                  CASE
+                      WHEN active_streams > 0 AND next_ts IS NOT NULL
+                          THEN date_diff('second', ts, next_ts)
+                      ELSE 0
+                  END
+              ) AS covered_seconds
+          FROM events_with_active
+          GROUP BY day_ist
+      ),
+      moment_uploads as (select * from d11_stitch.moment_raw)
+      SELECT
+          coalesce(cast(d.day_ist as timestamp),cast(e.day_ist as timestamp)) day_ist,
+          d.total_stream_seconds / 60.0  AS total_stream_minutes,
+          c.covered_seconds/ 3600.0 AS covered_hours,
+          e.new_moments_daily,
+          e.new_duration_sec_daily/60.0 as moment_uploads,
+          f.distinct_streams,
+          f.distinct_creators
+      FROM daily_total d
+      JOIN daily_covered c
+        ON d.day_ist = c.day_ist
+      full outer join moment_uploads e
+      on d.day_ist = e.day_ist
+      left join d11_stitch.daylevel_metric f
+      on d.day_ist = f.eventdate
+      and date(d.day_ist) >= date('2025-12-04')
+      ORDER BY d.day_ist )
+SELECT
+    (DATE_FORMAT((stream_day_level_details.day_ist  AT TIME ZONE 'Asia/Kolkata'), '%Y-%m-%d')) AS "stream_day_level_details.day_ist_date",
+    COALESCE(SUM(CAST( stream_day_level_details.covered_hours   AS DOUBLE)), 0) AS "covered_hours",
+    COALESCE(SUM(CAST( stream_day_level_details.total_stream_minutes   AS DOUBLE)), 0) AS "total_stream_minutes",
+    COALESCE(SUM(CAST( stream_day_level_details.distinct_creators   AS DOUBLE)), 0) AS "creators",
+    COALESCE(SUM(CAST( stream_day_level_details.distinct_streams   AS DOUBLE)), 0) AS "active_streams",
+    COALESCE(SUM(CAST( stream_day_level_details.new_moments_daily   AS DOUBLE)), 0) AS "moments_uploaded"
+FROM stream_day_level_details
+WHERE (stream_day_level_details.day_ist ) >= ((CAST(CAST((FORMAT_DATETIME(DATE_ADD('day', -7, CAST(CAST(DATE_TRUNC('DAY', (NOW() AT TIME ZONE 'Asia/Kolkata')) AS DATE) AS TIMESTAMP)), 'yyyy-MM-dd HH:mm:ss.SSS') || ' Asia/Kolkata') AS TIMESTAMP WITH TIME ZONE) AT TIME ZONE 'UTC' AS TIMESTAMP)))
+GROUP BY
+    1
+ORDER BY
+    1 DESC
+LIMIT 500
+```
+
+**Tables referenced**
+
+- `d11_stitch.daylevel_metric`
+- `d11_stitch.moment_raw`
+- `d11_transactions.dream11_userregistration`
+- `d11_transactions.live_streaming_stream`
+
+**Result preview**
+
+- Query ID: 687e8293-160b-417d-88a4-c8b85bc07635
+- Rows returned (client-capped): 8
+- Data scanned: 1558.53 MB
+- Execution time: 5.16s
+
+| stream_day_level_details.day_ist_date | covered_hours | total_stream_minutes | creators | active_streams | moments_uploaded |
+| --- | --- | --- | --- | --- | --- |
+| 2026-01-08 | 4.225833333333333 | 371.03333333333336 | 1.0 | 1.0 | 6.0 |
+| 2026-01-07 | 16.296666666666667 | 3362.35 | 20.0 | 24.0 | 43.0 |
+| 2026-01-06 | 13.721944444444444 | 2553.15 | 14.0 | 16.0 | 83.0 |
+| 2026-01-05 | 14.289166666666667 | 2636.0 | 15.0 | 17.0 | 28.0 |
+| 2026-01-04 | 18.76222222222222 | 3352.016666666667 | 17.0 | 23.0 | 26.0 |
+| 2026-01-03 | 12.100277777777778 | 2002.6 | 11.0 | 13.0 | 17.0 |
+| 2026-01-02 | 11.608333333333333 | 1625.2666666666667 | 8.0 | 10.0 | 50.0 |
+| 2026-01-01 | 13.475277777777778 | 1765.2 | 10.0 | 15.0 | 15.0 |

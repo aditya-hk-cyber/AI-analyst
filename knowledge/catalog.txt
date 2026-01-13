@@ -1,0 +1,512 @@
+# Data catalog (generated)
+
+This is generated from the SQL templates in `knowledge/queries/` by describing every referenced table.
+
+## Tables referenced by sample queries
+
+### `d11_stitch.cjusers`
+
+**DDL (SHOW CREATE TABLE)**
+
+```sql
+  eventdate timestamp,
+  users bigint)
+LOCATION 's3://d11-data-stitch/prod/cjusers'
+TBLPROPERTIES (
+  'table_type'='iceberg',
+  'write_compression'='zstd'
+);
+```
+
+**Columns**
+
+| Column | Type | Comment |
+| --- | --- | --- |
+| eventdate | timestamp |  |
+| users | bigint |  |
+
+**Partition columns**
+
+_(none)_
+
+### `d11_stitch.day_hour_watchtime`
+
+**DDL (SHOW CREATE TABLE)**
+
+```sql
+  eventdate timestamp,
+  hour_of_day timestamp,
+  watch_seconds bigint)
+LOCATION 's3://d11-data-stitch/prod/day_hour_watchtime'
+TBLPROPERTIES (
+  'table_type'='iceberg',
+  'write_compression'='zstd'
+);
+```
+
+**Columns**
+
+| Column | Type | Comment |
+| --- | --- | --- |
+| eventdate | timestamp |  |
+| hour_of_day | timestamp |  |
+| watch_seconds | bigint |  |
+
+**Partition columns**
+
+_(none)_
+
+### `d11_stitch.daylevel_engagedpaid`
+
+**DDL (SHOW CREATE TABLE)**
+
+```sql
+  day_ist timestamp,
+  normal_chats bigint,
+  superchats bigint,
+  prediction bigint,
+  reaction bigint,
+  groupgoal bigint,
+  distinct_users_chats bigint,
+  distinct_users_superchats bigint,
+  distinct_users_prediction bigint,
+  distinct_users_reaction bigint,
+  distinct_users_groupgoal bigint,
+  paid_users bigint,
+  engaged_users bigint)
+LOCATION 's3://d11-data-stitch/prod/daylevel_engagedpaid'
+TBLPROPERTIES (
+  'table_type'='iceberg',
+  'write_compression'='zstd'
+);
+```
+
+**Columns**
+
+| Column | Type | Comment |
+| --- | --- | --- |
+| day_ist | timestamp |  |
+| normal_chats | bigint |  |
+| superchats | bigint |  |
+| prediction | bigint |  |
+| reaction | bigint |  |
+| groupgoal | bigint |  |
+| distinct_users_chats | bigint |  |
+| distinct_users_superchats | bigint |  |
+| distinct_users_prediction | bigint |  |
+| distinct_users_reaction | bigint |  |
+| distinct_users_groupgoal | bigint |  |
+| paid_users | bigint |  |
+| engaged_users | bigint |  |
+
+**Partition columns**
+
+_(none)_
+
+### `d11_stitch.daylevel_metric`
+
+**DDL (SHOW CREATE TABLE)**
+
+```sql
+  eventdate timestamp,
+  dau bigint,
+  livestream_dau bigint,
+  fantasy_dau bigint,
+  moment_dau bigint,
+  total_watch_min_cum double,
+  watch_minutes decimal(21, 1),
+  distinct_streams bigint,
+  distinct_creators bigint,
+  total_stream_minutes decimal(21, 1),
+  public_users bigint,
+  public_db_spent bigint,
+  customers bigint,
+  db_purchased bigint,
+  normal_chats bigint,
+  superchats bigint,
+  prediction bigint,
+  reaction bigint,
+  groupgoal bigint)
+LOCATION 's3://d11-data-stitch/prod/daylevel_metric'
+TBLPROPERTIES (
+  'table_type'='iceberg',
+  'write_compression'='zstd'
+);
+```
+
+**Columns**
+
+| Column | Type | Comment |
+| --- | --- | --- |
+| eventdate | timestamp |  |
+| dau | bigint |  |
+| livestream_dau | bigint |  |
+| fantasy_dau | bigint |  |
+| moment_dau | bigint |  |
+| total_watch_min_cum | double |  |
+| watch_minutes | decimal(21, 1) |  |
+| distinct_streams | bigint |  |
+| distinct_creators | bigint |  |
+| total_stream_minutes | decimal(21, 1) |  |
+| public_users | bigint |  |
+| public_db_spent | bigint |  |
+| customers | bigint |  |
+| db_purchased | bigint |  |
+| normal_chats | bigint |  |
+| superchats | bigint |  |
+| prediction | bigint |  |
+| reaction | bigint |  |
+| groupgoal | bigint |  |
+
+**Partition columns**
+
+_(none)_
+
+### `d11_stitch.moment_raw`
+
+**DDL (SHOW CREATE TABLE)**
+
+```sql
+  day_ist date,
+  new_moments_daily bigint,
+  new_duration_sec_daily double)
+LOCATION 's3://d11-data-stitch/prod/moment_raw'
+TBLPROPERTIES (
+  'table_type'='iceberg',
+  'write_compression'='zstd'
+);
+```
+
+**Columns**
+
+| Column | Type | Comment |
+| --- | --- | --- |
+| day_ist | date |  |
+| new_moments_daily | bigint |  |
+| new_duration_sec_daily | double |  |
+
+**Partition columns**
+
+_(none)_
+
+### `d11_stitch.sportan_userid_new`
+
+**DDL (SHOW CREATE TABLE)**
+
+```sql
+  userid bigint)
+LOCATION 's3://d11-data-stitch/prod/sportan_userid_new'
+TBLPROPERTIES (
+  'table_type'='iceberg',
+  'write_compression'='zstd'
+);
+```
+
+**Columns**
+
+| Column | Type | Comment |
+| --- | --- | --- |
+| userid | bigint |  |
+
+**Partition columns**
+
+_(none)_
+
+### `d11_stitch.timespentonmoment`
+
+**DDL (SHOW CREATE TABLE)**
+
+```sql
+  day_ist timestamp,
+  hour_bucket timestamp,
+  total_watch_min_cum double)
+LOCATION 's3://d11-data-stitch/prod/timespentonmoment'
+TBLPROPERTIES (
+  'table_type'='iceberg',
+  'write_compression'='zstd'
+);
+```
+
+**Columns**
+
+| Column | Type | Comment |
+| --- | --- | --- |
+| day_ist | timestamp |  |
+| hour_bucket | timestamp |  |
+| total_watch_min_cum | double |  |
+
+**Partition columns**
+
+_(none)_
+
+### `d11_transactions.dream11_userregistration`
+
+**DDL (SHOW CREATE TABLE)**
+
+```sql
+  id bigint,
+  password string,
+  secpassword string,
+  imageurl string,
+  stateid int,
+  countryid int,
+  updated_from string,
+  regfromwlsid int,
+  shortrefcode string,
+  teamname string,
+  userguid string,
+  userip string,
+  sessionid string,
+  fraudid string,
+  usersegment int,
+  useragent string,
+  changelog string,
+  dtvres string,
+  deviceid string,
+  utmref bigint,
+  utmsource string,
+  utmmedium string,
+  utmcontent string,
+  utmcampaign string,
+  utmterm string,
+  utmfullstring string,
+  utmretarget string,
+  utmretargetcontent string,
+  ismobileverified int,
+  iscommemailverified int,
+  isverified int,
+  familyid bigint,
+  allowsmsnotification int,
+  showmoneybackbanner int,
+  depositdone int,
+  depositdate timestamp,
+  lastwithdrawalstatus int,
+  lastwithdrawaldate timestamp,
+  status int,
+  extratext2 string,
+  extraint1 int,
+  extraint2 int,
+  extradatetime1 timestamp,
+  extradatetime2 timestamp,
+  extrabigint1 bigint,
+  extratinyint1 int,
+  extratinyint2 int,
+  extratext1 string,
+  createddate timestamp,
+  modifieddate timestamp,
+  dateofbirth timestamp,
+  recupdatedat timestamp,
+  emailid string,
+  emailidstripped string,
+  commemailid string,
+  address string,
+  city string,
+  commmobnum string,
+  gender string,
+  mobilenum string,
+  profilepicurl string,
+  userfullname string,
+  zipcode string,
+  usertype string,
+  tagline string,
+  shortdesc string,
+  longdesc string,
+  website string,
+  teamnameupdatecount int,
+  emailidenc string,
+  commemailidenc string)
+LOCATION 's3://d11-cosmos-transactions/prod/dream11_userregistration'
+TBLPROPERTIES (
+  'table_type'='iceberg'
+);
+```
+
+**Columns**
+
+| Column | Type | Comment |
+| --- | --- | --- |
+| id | bigint |  |
+| password | string |  |
+| secpassword | string |  |
+| imageurl | string |  |
+| stateid | int |  |
+| countryid | int |  |
+| updated_from | string |  |
+| regfromwlsid | int |  |
+| shortrefcode | string |  |
+| teamname | string |  |
+| userguid | string |  |
+| userip | string |  |
+| sessionid | string |  |
+| fraudid | string |  |
+| usersegment | int |  |
+| useragent | string |  |
+| changelog | string |  |
+| dtvres | string |  |
+| deviceid | string |  |
+| utmref | bigint |  |
+| utmsource | string |  |
+| utmmedium | string |  |
+| utmcontent | string |  |
+| utmcampaign | string |  |
+| utmterm | string |  |
+| utmfullstring | string |  |
+| utmretarget | string |  |
+| utmretargetcontent | string |  |
+| ismobileverified | int |  |
+| iscommemailverified | int |  |
+| isverified | int |  |
+| familyid | bigint |  |
+| allowsmsnotification | int |  |
+| showmoneybackbanner | int |  |
+| depositdone | int |  |
+| depositdate | timestamp |  |
+| lastwithdrawalstatus | int |  |
+| lastwithdrawaldate | timestamp |  |
+| status | int |  |
+| extratext2 | string |  |
+| extraint1 | int |  |
+| extraint2 | int |  |
+| extradatetime1 | timestamp |  |
+| extradatetime2 | timestamp |  |
+| extrabigint1 | bigint |  |
+| extratinyint1 | int |  |
+| extratinyint2 | int |  |
+| extratext1 | string |  |
+| createddate | timestamp |  |
+| modifieddate | timestamp |  |
+| dateofbirth | timestamp |  |
+| recupdatedat | timestamp |  |
+| emailid | string |  |
+| emailidstripped | string |  |
+| commemailid | string |  |
+| address | string |  |
+| city | string |  |
+| commmobnum | string |  |
+| gender | string |  |
+| mobilenum | string |  |
+| profilepicurl | string |  |
+| userfullname | string |  |
+| zipcode | string |  |
+| usertype | string |  |
+| tagline | string |  |
+| shortdesc | string |  |
+| longdesc | string |  |
+| website | string |  |
+| teamnameupdatecount | int |  |
+| emailidenc | string |  |
+| commemailidenc | string |  |
+
+**Partition columns**
+
+_(none)_
+
+### `d11_transactions.dreambucks_account_ledger`
+
+**DDL (SHOW CREATE TABLE)**
+
+```sql
+  transaction_id string,
+  account_type string,
+  expiry_date bigint,
+  transaction_amount bigint,
+  created_at bigint,
+  rec_updated_at timestamp,
+  transaction_type string,
+  parent_idempotency_key string,
+  account_id string,
+  meta string,
+  idempotency_key string,
+  id bigint,
+  source_id int,
+  customer_id string)
+LOCATION 's3://d11-cosmos-transactions/prod/dreambucks_account_ledger'
+TBLPROPERTIES (
+  'table_type'='iceberg',
+  'write_compression'='GZIP',
+  'format'='PARQUET'
+);
+```
+
+**Columns**
+
+| Column | Type | Comment |
+| --- | --- | --- |
+| transaction_id | string |  |
+| account_type | string |  |
+| expiry_date | bigint |  |
+| transaction_amount | bigint |  |
+| created_at | bigint |  |
+| rec_updated_at | timestamp |  |
+| transaction_type | string |  |
+| parent_idempotency_key | string |  |
+| account_id | string |  |
+| meta | string |  |
+| idempotency_key | string |  |
+| id | bigint |  |
+| source_id | int |  |
+| customer_id | string |  |
+
+**Partition columns**
+
+_(none)_
+
+### `d11_transactions.live_streaming_stream`
+
+**DDL (SHOW CREATE TABLE)**
+
+```sql
+  scheduletime timestamp,
+  influencerid bigint,
+  stagearn string,
+  creatortoken string,
+  playbackurl string,
+  filekey string,
+  streamendtime timestamp,
+  createdat timestamp,
+  metadata string,
+  recordingstatus string,
+  recordingurl string,
+  streamtitle string,
+  id bigint,
+  poststreamprocessingstatus string,
+  streamstarttime timestamp,
+  streamstatus string,
+  roundid bigint,
+  recupdatedat timestamp,
+  thumbnailurl string)
+LOCATION 's3://d11-cosmos-transactions/prod/live_streaming_Stream'
+TBLPROPERTIES (
+  'table_type'='iceberg',
+  'write_compression'='GZIP',
+  'format'='PARQUET'
+);
+```
+
+**Columns**
+
+| Column | Type | Comment |
+| --- | --- | --- |
+| scheduletime | timestamp |  |
+| influencerid | bigint |  |
+| stagearn | string |  |
+| creatortoken | string |  |
+| playbackurl | string |  |
+| filekey | string |  |
+| streamendtime | timestamp |  |
+| createdat | timestamp |  |
+| metadata | string |  |
+| recordingstatus | string |  |
+| recordingurl | string |  |
+| streamtitle | string |  |
+| id | bigint |  |
+| poststreamprocessingstatus | string |  |
+| streamstarttime | timestamp |  |
+| streamstatus | string |  |
+| roundid | bigint |  |
+| recupdatedat | timestamp |  |
+| thumbnailurl | string |  |
+
+**Partition columns**
+
+_(none)_

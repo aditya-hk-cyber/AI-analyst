@@ -1,0 +1,156 @@
+# Domain knowledge (generated)
+
+Dream11 watch-along resembles Twitch-style livestreaming:
+- Users watch creators' streams during matches, chat, react, and participate in predictions/group goals.
+- Users can pay using DreamBucks (DB).
+- Creators upload short highlight clips (“moments”) from live streams.
+
+## Key concepts
+
+- **IST vs UTC**: Most metrics are reported in IST; queries often convert using `+ INTERVAL '330' MINUTE` or `AT TIME ZONE 'Asia/Kolkata'`.
+- **Sportan**: Some queries exclude SPORTAN (internal/special) users; treat SPORTAN-exclusion as an important filter when reporting public metrics.
+- **Grain**: Many base metrics are day-level in IST (`eventdate`, `day_ist`). Stream data may span days and must be split across days.
+
+## Table cheat sheet (from sample queries)
+
+### `d11_stitch.cjusers`
+
+Daily user count for the CJ cohort (exact definition needs confirmation; used as a daily users series).
+
+- **Grain (inferred)**: day
+- **Key columns**:
+  - `eventdate` (timestamp)
+  - `users` (bigint)
+
+### `d11_stitch.day_hour_watchtime`
+
+Watch time (seconds) aggregated by day/hour for watch-along streams.
+
+- **Grain (inferred)**: hour
+- **Key columns**:
+  - `eventdate` (timestamp)
+  - `hour_of_day` (timestamp)
+  - `watch_seconds` (bigint)
+
+### `d11_stitch.daylevel_engagedpaid`
+
+Daily rollup of engaged/paid users and interaction counts (chats, reactions, predictions, etc).
+
+- **Grain (inferred)**: day
+- **Key columns**:
+  - `day_ist` (timestamp)
+  - `normal_chats` (bigint)
+  - `superchats` (bigint)
+  - `prediction` (bigint)
+  - `reaction` (bigint)
+  - `groupgoal` (bigint)
+  - `distinct_users_chats` (bigint)
+  - `distinct_users_superchats` (bigint)
+  - `distinct_users_prediction` (bigint)
+  - `distinct_users_reaction` (bigint)
+  - `distinct_users_groupgoal` (bigint)
+  - `paid_users` (bigint)
+
+### `d11_stitch.daylevel_metric`
+
+Daily rollup of core engagement + streaming + monetization metrics (used as the primary day-level fact).
+
+- **Grain (inferred)**: day
+- **Key columns**:
+  - `eventdate` (timestamp)
+  - `dau` (bigint)
+  - `livestream_dau` (bigint)
+  - `fantasy_dau` (bigint)
+  - `moment_dau` (bigint)
+  - `total_watch_min_cum` (double)
+  - `watch_minutes` (decimal(21, 1))
+  - `distinct_streams` (bigint)
+  - `distinct_creators` (bigint)
+  - `total_stream_minutes` (decimal(21, 1))
+  - `public_users` (bigint)
+  - `public_db_spent` (bigint)
+
+### `d11_stitch.moment_raw`
+
+Daily moments uploaded and total uploaded duration (seconds).
+
+- **Grain (inferred)**: day
+- **Key columns**:
+  - `day_ist` (date)
+  - `new_moments_daily` (bigint)
+  - `new_duration_sec_daily` (double)
+
+### `d11_stitch.sportan_userid_new`
+
+List of SPORTAN user IDs (used to exclude internal/special accounts).
+
+- **Grain (inferred)**: unknown
+- **Key columns**:
+  - `userid` (bigint)
+
+### `d11_stitch.timespentonmoment`
+
+Cumulative watch minutes on moments by hourly bucket (take last bucket per day for daily total).
+
+- **Grain (inferred)**: hour
+- **Key columns**:
+  - `day_ist` (timestamp)
+  - `hour_bucket` (timestamp)
+  - `total_watch_min_cum` (double)
+
+### `d11_transactions.dream11_userregistration`
+
+User registration table; used here to identify SPORTAN users by `usertype`.
+
+- **Grain (inferred)**: event-time
+- **Key columns**:
+  - `id` (bigint)
+  - `password` (string)
+  - `secpassword` (string)
+  - `imageurl` (string)
+  - `stateid` (int)
+  - `countryid` (int)
+  - `updated_from` (string)
+  - `regfromwlsid` (int)
+  - `shortrefcode` (string)
+  - `teamname` (string)
+  - `userguid` (string)
+  - `userip` (string)
+
+### `d11_transactions.dreambucks_account_ledger`
+
+Transactional DreamBucks ledger (debits/credits) used to compute DB spend and purchases.
+
+- **Grain (inferred)**: event-time
+- **Key columns**:
+  - `id` (bigint)
+  - `customer_id` (string)
+  - `transaction_id` (string)
+  - `account_type` (string)
+  - `expiry_date` (bigint)
+  - `transaction_amount` (bigint)
+  - `created_at` (bigint)
+  - `rec_updated_at` (timestamp)
+  - `transaction_type` (string)
+  - `parent_idempotency_key` (string)
+  - `account_id` (string)
+  - `meta` (string)
+
+### `d11_transactions.live_streaming_stream`
+
+Raw livestream records (start/end, status, influencer/creator).
+
+- **Grain (inferred)**: event-time
+- **Key columns**:
+  - `id` (bigint)
+  - `influencerid` (bigint)
+  - `scheduletime` (timestamp)
+  - `stagearn` (string)
+  - `creatortoken` (string)
+  - `playbackurl` (string)
+  - `filekey` (string)
+  - `streamendtime` (timestamp)
+  - `createdat` (timestamp)
+  - `metadata` (string)
+  - `recordingstatus` (string)
+  - `recordingurl` (string)

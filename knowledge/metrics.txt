@@ -1,0 +1,33 @@
+# Metrics (generated)
+
+This section describes the *intent* and *computation* patterns from the sample queries.
+
+## Engagement / activity
+
+- **DAU**: `d11_stitch.daylevel_metric.dau` (and related `livestream_dau`, `moment_dau`, `fantasy_dau`) aggregated by `eventdate` (IST).
+- **Chats / reactions / predictions / superchats / groupgoals**: `d11_stitch.daylevel_metric.{normal_chats,reaction,prediction,superchats,groupgoal}`.
+- **Engaged users / paid users**: `d11_stitch.daylevel_engagedpaid.{engaged_users,paid_users}` (joined to day by IST date in the sample query).
+- **CJ users**: `d11_stitch.cjusers.users` by `eventdate` (definition of CJ should be confirmed).
+
+## Watch time
+
+- **Watch minutes (watch-along)**: sum of `watch_seconds / 60` from `d11_stitch.day_hour_watchtime`, grouped to day (see `knowledge/queries/Code.sql`).
+- **Moments watchtime**: daily value from `d11_stitch.timespentonmoment.total_watch_min_cum` by taking the last `hour_bucket` per `day_ist` (see `knowledge/queries/Code.sql`).
+- **Total watch minutes**: `watch_minutes_watch_along + moments_watchtime`.
+
+## Streaming supply
+
+- **Total stream minutes**: from `d11_transactions.live_streaming_stream` where `streamstatus='COMPLETED'` and start/end present; convert to IST, split streams across days, then sum seconds per day / 60 (see `Creator level strem minutes.sql`).
+- **Covered hours**: per IST day, the total time where at least one stream is live (event sweep using +1 at start, -1 at end).
+- **Distinct streams / creators**: `d11_stitch.daylevel_metric.{distinct_streams,distinct_creators}` (often easier than recomputing from raw).
+
+## DreamBucks (DB) spend/purchase
+
+- **Public DB spent**: from `d11_transactions.dreambucks_account_ledger` where `lower(transaction_type)='debit'`, excluding SPORTAN users via `d11_stitch.sportan_userid_new` (see `knowledge/queries/_spent.sql`).
+- **Public DB purchased**: credits with `source_id = 3`, excluding meta `DreamCoins converted to DreamBucks`, excluding SPORTAN (see `knowledge/queries/_spent.sql`).
+
+## Common pitfalls
+
+- **Timezone alignment**: join on the formatted IST date consistently (many sample queries use `DATE_FORMAT(ts AT TIME ZONE 'Asia/Kolkata', '%Y-%m-%d')`).
+- **Overnight streams**: never allocate full duration to start day; always split across days (sample uses `SEQUENCE(date_trunc('day', start_ist), date_trunc('day', end_ist), INTERVAL '1' DAY)`).
+- **SPORTAN filtering**: replicate SPORTAN-exclusion logic when reporting public creator metrics or public user spend.
