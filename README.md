@@ -82,22 +82,6 @@ uv run insights-mcp --help
 uv run python -c "import boto3; print(boto3.client('athena').list_data_catalogs())"
 ```
 
-### 4. Generate Knowledge Base (Recommended)
-
-This step executes sample SQL queries and generates knowledge documentation:
-
-```bash
-uv run insights-mcp-knowledge-gen --include-show-create
-```
-
-This creates:
-- `knowledge/catalog.txt` - Schema catalog with table descriptions
-- `knowledge/domain.txt` - Business domain knowledge
-- `knowledge/metrics.txt` - Metric definitions
-- `knowledge/examples.txt` - Example SQL queries
-
-**Note:** Queries are capped at 100 rows to avoid large data pulls.
-
 ---
 
 ## Cursor Integration
