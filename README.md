@@ -1,6 +1,7 @@
 ## Insights MCP
 
-Analytics MCP server + Athena helper utilities for the Dream11 `d11_stitch` warehouse.
+![Architecture](assets/architecture.png)
+
 
 ### 1. Setup
 
