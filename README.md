@@ -11,25 +11,131 @@ cd /Users/dhruvnigam/Projects/insights-mcp
 uv sync --frozen
 ```
 
-### Generate knowledge docs (recommended)
+This will:
+- Create a virtual environment
+- Install `fastmcp`, `boto3`, and other dependencies
+- Set up the package in editable mode
 
-This executes the sample SQL queries under `knowledge/queries/` (hard-capped to **100 rows**) and writes:
-
-- `knowledge/catalog.txt`
-- `knowledge/domain.txt`
-- `knowledge/metrics.txt`
-- `knowledge/examples.txt`
-
-Run:
+### 3. Verify Installation
 
 ```bash
-cd /Users/dhruvnigam/Projects/insights-mcp
-uv run insights-mcp-knowledge-gen --include-show-create
+# Check if the command is available
+uv run insights-mcp --help
+
+# Test AWS connection
+uv run python -c "import boto3; print(boto3.client('athena').list_data_catalogs())"
 ```
 
-### Run the MCP server
+---
 
-The server exposes tools like `run_query`, `list_tables`, `describe_table`, `get_sample_data` and resources backed by the generated knowledge docs.
+## Cursor Integration
+
+### Step 1: Locate Your Cursor MCP Configuration
+
+Your Cursor MCP configuration file is at:
+```
+~/.cursor/mcp.json
+```
+
+### Step 2: Add Insights MCP Server
+
+Open `~/.cursor/mcp.json` and add the `insights-mcp` server configuration:
+
+```json
+{
+  "mcpServers": {
+    "insights-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/Users/dhruvnigam/Projects/insights-mcp",
+        "run",
+        "insights-mcp"
+      ]
+    },
+    // ... your other MCP servers (github, livekit-docs, etc.)
+  }
+}
+```
+
+### Step 3: Restart Cursor
+
+After saving the configuration:
+1. Quit Cursor completely (`Cmd+Q` on Mac)
+2. Reopen Cursor
+3. The Insights MCP server will automatically start when you begin a chat
+
+### Step 4: Verify Integration
+
+In a new Cursor chat, try:
+```
+Can you list all tables in the d11_stitch database?
+```
+
+You should see the MCP server respond with available tables.
+
+### Complete Example Configuration
+
+Here's a complete example of `~/.cursor/mcp.json` with multiple servers:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer YOUR_GITHUB_TOKEN"
+      }
+    },
+    "livekit-docs": {
+      "url": "https://docs.livekit.io/mcp",
+      "headers": {}
+    },
+    "insights-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/Users/dhruvnigam/Projects/insights-mcp",
+        "run",
+        "insights-mcp"
+      ]
+    }
+  }
+}
+```
+
+### Troubleshooting Cursor Integration
+
+**Server not starting?**
+```bash
+# Test the server manually
+cd /Users/dhruvnigam/Projects/insights-mcp
+uv run insights-mcp
+```
+
+**Check Cursor logs:**
+- Open Cursor
+- Go to `Help` → `Show Logs`
+- Look for MCP server errors
+
+**Python version issues?**
+```bash
+# Verify Python version
+uv run python --version  # Should be 3.11.x
+```
+
+**AWS credentials not working?**
+```bash
+# Verify AWS access
+aws sts get-caller-identity
+```
+
+---
+
+## Running the Server
+
+### Running Standalone (for testing)
 
 ```bash
 cd /Users/dhruvnigam/Projects/insights-mcp
@@ -96,10 +202,207 @@ The feedback agent:
 
 See `feedback/README.md` for more details.
 
-### Notes
+---
 
-- Athena access assumes your AWS credentials (SSO) are already available in your environment.
-- The `run_query` tool enforces a **100-row** cap to avoid returning large result sets.
-- Reports and feedback files are gitignored by default but can be committed if needed.
+## Production Deployment
 
+### Deployment Options
 
+#### Option 1: Google Cloud Run (Recommended)
+
+**Pros:**
+- Serverless (pay per use)
+- Auto-scaling
+- Easy HTTPS setup
+- Built-in authentication
+
+**Steps:**
+
+1. **Create Dockerfile**
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install uv
+RUN pip install uv
+
+# Copy project files
+COPY . .
+
+# Install dependencies
+RUN uv sync --frozen
+
+# Expose port
+EXPOSE 8080
+
+# Run server
+CMD ["uv", "run", "insights-mcp"]
+```
+
+2. **Build and Deploy**
+
+```bash
+# Authenticate
+gcloud auth login
+
+# Set project
+gcloud config set project YOUR_PROJECT_ID
+
+# Build image
+gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/insights-mcp
+
+# Deploy to Cloud Run
+gcloud run deploy insights-mcp \
+  --image gcr.io/YOUR_PROJECT_ID/insights-mcp \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated  # Or use --no-allow-unauthenticated for auth
+```
+
+3. **Set Environment Variables**
+
+```bash
+# Set AWS credentials as secrets
+gcloud run services update insights-mcp \
+  --set-env-vars AWS_ACCESS_KEY_ID=YOUR_KEY \
+  --set-env-vars AWS_SECRET_ACCESS_KEY=YOUR_SECRET \
+  --set-env-vars AWS_DEFAULT_REGION=us-east-1
+```
+
+#### Option 2: API Gateway with Cloud Run
+
+For better access control and rate limiting:
+
+1. Deploy to Cloud Run (as above)
+2. Create API Gateway configuration
+3. Point API Gateway to Cloud Run service
+4. Enable authentication and rate limiting
+
+#### Option 3: Self-Hosted
+
+```bash
+# On your server
+cd /path/to/insights-mcp
+uv sync --frozen
+
+# Run with systemd
+sudo systemctl enable insights-mcp
+sudo systemctl start insights-mcp
+```
+
+### Authentication Setup
+
+#### For HTTP MCP Servers
+
+Update your MCP configuration to use HTTP with authentication:
+
+```json
+{
+  "mcpServers": {
+    "insights-mcp": {
+      "type": "http",
+      "url": "https://your-cloudrun-url.run.app/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+#### Authentication Methods
+
+**1. API Key Authentication**
+
+Add to your `server.py`:
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP(
+    "InsightsMCP",
+    api_key_env="INSIGHTS_API_KEY"  # Checks X-API-Key header
+)
+```
+
+**2. Google Cloud IAM**
+
+```bash
+# Require authentication
+gcloud run services update insights-mcp \
+  --no-allow-unauthenticated
+
+# Grant access to specific users
+gcloud run services add-iam-policy-binding insights-mcp \
+  --member="user:someone@example.com" \
+  --role="roles/run.invoker"
+```
+
+**3. OAuth 2.0**
+
+Use Cloud Run with Identity-Aware Proxy (IAP).
+
+### Environment Variables for Production
+
+Required environment variables:
+
+```bash
+# AWS Credentials
+AWS_ACCESS_KEY_ID=xxx
+AWS_SECRET_ACCESS_KEY=xxx
+AWS_DEFAULT_REGION=us-east-1
+
+# Optional: API Key
+INSIGHTS_API_KEY=your-secret-key
+
+# Optional: Database override
+ATHENA_DATABASE=d11_stitch
+ATHENA_OUTPUT_BUCKET=s3://your-athena-results/
+```
+
+### Monitoring and Logs
+
+**Cloud Run:**
+```bash
+# View logs
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=insights-mcp"
+
+# View metrics
+gcloud monitoring dashboards list
+```
+
+**Self-Hosted:**
+```bash
+# View logs
+journalctl -u insights-mcp -f
+
+# Monitor with systemd
+systemctl status insights-mcp
+```
+
+### Security Best Practices
+
+1. **Never commit credentials** - Use environment variables or secret managers
+2. **Use HTTPS** - Always encrypt traffic in production
+3. **Enable authentication** - Don't expose APIs publicly without auth
+4. **Rate limiting** - Prevent abuse (use API Gateway)
+5. **Audit logging** - Log all queries and access
+6. **Least privilege** - Use IAM roles with minimal permissions
+7. **Regular updates** - Keep dependencies updated
+
+---
+
+## Roadmap
+
+- Formalize feedback mechanism
+- GitHub bot for feedback PRs
+- Expand database coverage
+- Enhanced query capabilities
+- Better report generation
+- Production API deployment
+- Advanced analytics features
+- Collaboration features
+- Self-improving knowledge base
+- Advanced integrations
