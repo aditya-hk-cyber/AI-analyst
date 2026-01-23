@@ -2,7 +2,7 @@
 
 Analytics MCP server + Athena helper utilities for the Dream11 `d11_stitch` warehouse.
 
-### Setup
+### 1. Setup
 
 This repo uses `uv`:
 
@@ -15,6 +15,29 @@ This will:
 - Create a virtual environment
 - Install `fastmcp`, `boto3`, and other dependencies
 - Set up the package in editable mode
+
+### 2. AWS Prerequisites
+
+Before setting up the MCP server, ensure you have active AWS credentials with access to the `d11_stitch` warehouse.
+
+#### 2.1 AWS SSO Authentication
+This project uses AWS SSO (Single Sign-On) for authentication.
+
+1. **Login to AWS Console**: Ensure you are logged into the **Dream11 3.0** AWS account in your browser.
+2. **SSO Login via CLI**: Run the following command and follow the prompts in your browser:
+
+```bash
+aws sso login
+```
+
+3. **Automatic Credentials**: Once authenticated, the AWS CLI and the MCP server will automatically use your SSO session.
+
+#### 2.2 Verify Credentials
+Test your connection to AWS:
+
+```bash
+aws sts get-caller-identity
+```
 
 ### 3. Verify Installation
 
