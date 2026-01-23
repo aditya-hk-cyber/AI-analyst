@@ -29,7 +29,7 @@ class AthenaClient:
         self,
         workgroup: str = "data_stitch",
         database: str = "d11_stitch",
-        region: str = "us-east-1",
+        region: str = "ap-south-1",
         max_results: int = 100,
         poll_interval: float = 1.0,
         timeout: float = 300.0,

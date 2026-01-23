@@ -261,14 +261,14 @@ def get_query_day_level() -> str:
 # ============== PROMPTS ==============
 
 @mcp.prompt()
-def asnwer_question() -> str:
+def answer_question() -> str:
     """
     Generate a prompt for writing a SQL query to answer a business question.
 
     Args:
         question: The business question to answer with data
     """
-    return f"""Answer the questions by running one or more sql queries."
+    return f"""You are a pricipal data analyst.Answer the questions by running one or more sql queries."
 
 Steps:
 1. Read insights://knowledge/catalog to find relevant tables
@@ -284,6 +284,70 @@ Important:
 - Consider time zones (data is in IST)
 - Limit results for large queries
 - Add comments explaining the query logic"""
+
+
+@mcp.prompt()
+def generate_feedback() -> str:
+    """
+    Generate feedback about the MCP server's knowledge base.
+
+    Args:
+        question_answered: The question or task that was just completed
+    """
+    from datetime import datetime
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    return f"""You just completed answering a question.
+
+Now, create a comprehensive feedback report about your experience with the knowledge base.
+Save this feedback as a markdown file at: /Users/dhruvnigam/Projects/insights-mcp/feedback/feedback_{timestamp}.md
+
+Your feedback report should include the following sections:
+
+## Question/Task Completed
+
+## Knowledge Availability Assessment
+- Was there sufficient information in the knowledge resources to answer this question?
+- Which knowledge resources were most helpful (catalog, domain, metrics, examples, queries)?
+- What information was missing or incomplete?
+- Did you have to make assumptions due to missing information?
+
+## Knowledge Quality Assessment
+- Was there any conflicting or contradictory information across different resources?
+- Were there any inconsistencies in terminology, definitions, or metric calculations?
+- Were the examples and query templates relevant and accurate for this task?
+- Was the documentation clear and easy to understand?
+
+## Efficiency and Usability
+- What specific information, if available, would have made this task easier or faster?
+- Did you have to query multiple tables to piece together information?
+- Were there any redundant or unclear sections in the knowledge base?
+
+## Gaps and Missing Information
+Identify specific gaps in each knowledge area:
+- **Catalog gaps**: Missing table documentation, unclear column descriptions, missing relationships
+- **Domain gaps**: Missing business context, unclear terminology, missing definitions
+- **Metrics gaps**: Missing metric definitions, unclear calculation logic, missing formulas
+- **Examples gaps**: Missing query patterns, outdated examples, lack of complex query examples
+
+## Suggestions for Knowledge Base Enhancement
+Provide specific, actionable suggestions:
+- New sections to add to catalog.txt (be specific about which tables/columns)
+- Additional metrics to document in metrics.txt (include suggested formulas)
+- Business context to add to domain.txt (be specific about which areas)
+- New example queries for examples.txt (provide actual SQL examples)
+- New query templates to add to the queries/ directory (describe what they should do)
+
+## Overall Effectiveness Rating
+Rate the overall effectiveness of the current knowledge base for this specific task:
+- **Rating**: [1-5 scale where 1=Poor, 5=Excellent]
+- **Reasoning**: Explain your rating
+- **Top 3 Improvements**: List the three most impactful improvements that would increase this rating
+
+---
+
+Be specific, detailed, and constructive. Include concrete examples wherever possible.
+Use actual table names, column names, and SQL snippets in your suggestions."""
 
 
 @mcp.prompt()
