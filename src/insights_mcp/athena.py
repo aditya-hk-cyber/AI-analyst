@@ -27,9 +27,10 @@ class AthenaClient:
 
     def __init__(
         self,
-        workgroup: str = "data_stitch",
+        workgroup: str = "primary",
         database: str = "d11_stitch",
         region: str = "ap-south-1",
+        output_location: str | None = None,
         max_results: int = 100,
         poll_interval: float = 1.0,
         timeout: float = 300.0,
@@ -37,6 +38,7 @@ class AthenaClient:
         self.workgroup = workgroup
         self.database = database
         self.region = region
+        self.output_location = output_location or f"s3://aws-athena-query-results-944380855954-{region}/"
         # Athena API pagination page size. This is NOT a hard cap on total rows
         # returned unless we enforce it in `_fetch_results`.
         self.max_results = max_results
@@ -88,11 +90,19 @@ class AthenaClient:
             query_to_run = self._maybe_wrap_with_limit(query, max_rows)
 
         # Start query execution
-        response = self._client.start_query_execution(
-            QueryString=query_to_run,
-            QueryExecutionContext={"Database": self.database},
-            WorkGroup=self.workgroup,
-        )
+        execution_params = {
+            "QueryString": query_to_run,
+            "QueryExecutionContext": {"Database": self.database},
+            "WorkGroup": self.workgroup,
+        }
+        
+        # Add output location if provided
+        if self.output_location:
+            execution_params["ResultConfiguration"] = {
+                "OutputLocation": self.output_location
+            }
+        
+        response = self._client.start_query_execution(**execution_params)
         query_execution_id = response["QueryExecutionId"]
 
         # Wait for completion
