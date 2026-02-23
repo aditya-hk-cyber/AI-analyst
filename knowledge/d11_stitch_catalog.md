@@ -161,19 +161,80 @@ SPORTAN (internal) users watch time - for exclusion in public metrics.
 
 ## Watch Party Tables
 
+### `user_watch_party_time_spent_daily`
+**User-level granular watch party data.** Use this for user-specific analysis.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| event_date | date | Date of watch party |
+| userid | string | User ID |
+| topic_id | string | Topic/match ID |
+| room_id | string | Watch party room ID |
+| watch_party_ts | bigint | Time spent (seconds, raw) |
+| adjusted_watch_party_ts | bigint | Adjusted time spent (seconds) |
+| percentile_value | double | User's percentile ranking |
+
+**Location**: `s3://d11-data-stitch/prod/user_watch_party_time_spent_daily`
+
+**Sample Query - User Time Spent:**
+```sql
+SELECT 
+    userid,
+    SUM(watch_party_ts) as total_time_spent,
+    COUNT(DISTINCT topic_id) as topics_joined
+FROM d11_stitch.user_watch_party_time_spent_daily
+WHERE event_date >= CURRENT_DATE - INTERVAL '7' DAY
+GROUP BY userid
+ORDER BY total_time_spent DESC
+LIMIT 100;
+```
+
 ### `watch_party_time_spent_daily_summary`
-Daily aggregated watch party metrics.
+**Daily aggregated watch party metrics with percentile distributions.** Use this for trend analysis.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | event_date | date | Date |
-| total_watch_party_ts | bigint | Total time spent |
+| total_watch_party_ts | bigint | Total time spent (all users, seconds) |
 | total_users | bigint | User count |
-| avg_watch_party_ts | double | Avg time per user |
-| tf_watch_party_ts | bigint | Top percentile |
-| med_watch_party_ts | bigint | Median |
-| total_topics | bigint | Topic count |
-| avg_topics | double | Avg topics/user |
+| avg_watch_party_ts | double | Average time per user (seconds) |
+| tf_watch_party_ts | bigint | **TF**: Lower percentile threshold (seconds) |
+| med_watch_party_ts | bigint | **Median**: 50th percentile (seconds) |
+| sf_watch_party_ts | bigint | **SF**: Mid-lower percentile (seconds) |
+| nt_watch_party_ts | bigint | **NT**: 90th percentile / Upper (seconds) |
+| nn_watch_party_ts | bigint | **NN**: 99th percentile / Top users (seconds) |
+| avg_user_topic_ts | double | Avg time per user per topic |
+| total_topics | bigint | Total topics/matches |
+| avg_topics | double | Avg topics per user |
+| med_topics | bigint | Median topics per user |
+| avg_rooms | double | Avg rooms per user |
+| med_rooms | bigint | Median rooms per user |
+
+#### Percentile Metric Definitions
+
+| Metric | Column | Description |
+|--------|--------|-------------|
+| **TF** | `tf_watch_party_ts` | Top Floor - Lower percentile threshold |
+| **Median** | `med_watch_party_ts` | 50th percentile (typical user) |
+| **SF** | `sf_watch_party_ts` | Second Floor - Mid-lower percentile |
+| **NT** | `nt_watch_party_ts` | Ninety - 90th percentile (engaged users) |
+| **NN** | `nn_watch_party_ts` | Ninety-Nine - 99th percentile (power users) |
+
+**Sample Query - Daily Trends:**
+```sql
+SELECT 
+    event_date,
+    total_users,
+    ROUND(avg_watch_party_ts / 60, 1) as avg_minutes,
+    ROUND(med_watch_party_ts / 60, 1) as median_minutes,
+    ROUND(nt_watch_party_ts / 60, 1) as p90_minutes,
+    ROUND(nn_watch_party_ts / 60, 1) as p99_minutes
+FROM d11_stitch.watch_party_time_spent_daily_summary
+WHERE event_date >= CURRENT_DATE - INTERVAL '7' DAY
+ORDER BY event_date DESC;
+```
+
+**Key Insight**: On high-volume days (100K+ users), median stays ~25-30 seconds while NN (top 1%) reaches 7-10 minutes. On low-volume days, power users can spend 2+ hours (NN > 150 minutes).
 
 ### `watch_party_user_reactions`
 User-level watch party reaction data.
@@ -184,8 +245,8 @@ User-level watch party reaction data.
 | userid | string | User ID |
 | topic_id | string | Topic ID |
 | watch_party_name | string | Party name |
-| wp_type | string | Party type |
-| db_type | string | DB type |
+| wp_type | string | Party type (public/private) |
+| db_type | string | DreamBucks type |
 | total_db_spent | double | DB spent |
 | reaction_sent | bigint | Reactions sent |
 
@@ -198,9 +259,40 @@ User overlap between watch party and other features.
 | app_openers | bigint | App openers |
 | livestream_users | bigint | Livestream users |
 | moments_users | bigint | Moments users |
+| livestream_moments_users | bigint | Users in both livestream & moments |
+| cj_users | bigint | CJ users |
 | wp_users | bigint | Watch party users |
-| wp_livestream_overlap | bigint | WP + Livestream |
-| wp_fantasy_overlap | bigint | WP + Fantasy |
+| wp_hpl_overlap | bigint | WP + HPL overlap |
+| wp_livestream_overlap | bigint | WP + Livestream overlap |
+| wp_moments_overlap | bigint | WP + Moments overlap |
+| wp_livstream_moments_overlap | bigint | WP + Livestream + Moments |
+| wp_fantasy_overlap | bigint | WP + Fantasy overlap |
+
+### `watch_party_user_funnel`
+Watch party funnel metrics by event.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| event_date | date | Date |
+| eventname | string | Funnel event name |
+| overall_users | bigint | Total users |
+| overall_hits | bigint | Total hits |
+| public_users | bigint | Public party users |
+| public_hits | bigint | Public party hits |
+| private_users | bigint | Private party users |
+| private_hits | bigint | Private party hits |
+
+### `watch_party_reaction_summary`
+Daily reaction summary by party type.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| event_date | date | Date |
+| wp_type | string | Party type |
+| db_type | string | DB type |
+| total_db_spent | double | Total DB spent |
+| total_reaction_sent | bigint | Total reactions |
+| reactions_users | bigint | Users who reacted |
 
 ---
 
