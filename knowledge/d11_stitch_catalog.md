@@ -236,6 +236,70 @@ ORDER BY event_date DESC;
 
 **Key Insight**: On high-volume days (100K+ users), median stays ~25-30 seconds while NN (top 1%) reaches 7-10 minutes. On low-volume days, power users can spend 2+ hours (NN > 150 minutes).
 
+#### How `watch_party_time_spent_daily_summary` is built
+
+The summary is derived from `user_watch_party_time_spent_daily`. Aggregation flow:
+
+1. **Innermost**: Per user, per topic, per day — sum `adjusted_watch_party_ts` and count distinct `room_id`.
+2. **Middle**: Per user, per day — sum topic-level time, count distinct topics, avg rooms.
+3. **Outer**: Per day — aggregate across users: totals, counts, and **APPROX_PERCENTILE** for TF/med/SF/NT/NN.
+
+Percentile columns map to these quantiles:
+
+| Column | APPROX_PERCENTILE(..., q) | Quantile |
+|--------|---------------------------|----------|
+| tf_watch_party_ts | 0.25 | 25th percentile |
+| med_watch_party_ts | 0.5 | 50th (median) |
+| sf_watch_party_ts | 0.75 | 75th percentile |
+| nt_watch_party_ts | 0.9 | 90th percentile |
+| nn_watch_party_ts | 0.99 | 99th percentile |
+
+**Source query (creation logic):**
+```sql
+SELECT
+  event_date,
+  SUM(total_user_topic_ts) AS total_watch_party_ts,
+  COUNT(DISTINCT userid) AS total_users,
+  AVG(total_user_topic_ts) AS avg_watch_party_ts,
+  APPROX_PERCENTILE(total_user_topic_ts, 0.25) AS tf_watch_party_ts,
+  APPROX_PERCENTILE(total_user_topic_ts, 0.5)  AS med_watch_party_ts,
+  APPROX_PERCENTILE(total_user_topic_ts, 0.75) AS sf_watch_party_ts,
+  APPROX_PERCENTILE(total_user_topic_ts, 0.9)  AS nt_watch_party_ts,
+  APPROX_PERCENTILE(total_user_topic_ts, 0.99) AS nn_watch_party_ts,
+  AVG(avg_user_topic_ts) AS avg_user_topic_ts,
+  SUM(topics) AS total_topics,
+  AVG(topics) AS avg_topics,
+  APPROX_PERCENTILE(topics, 0.5) AS med_topics,
+  AVG(total_rooms) AS avg_rooms,
+  APPROX_PERCENTILE(total_rooms, 0.5) AS med_rooms
+FROM
+(
+  SELECT
+    event_date,
+    userid,
+    SUM(user_topic_daily_ts) AS total_user_topic_ts,
+    AVG(user_topic_daily_ts) AS avg_user_topic_ts,
+    AVG(avg_user_room_ts) AS avg_user_room_ts,
+    COUNT(DISTINCT topic_id) AS topics,
+    AVG(rooms) AS avg_rooms,
+    SUM(rooms) AS total_rooms
+  FROM
+  (
+    SELECT
+      event_date,
+      userid,
+      topic_id,
+      SUM(adjusted_watch_party_ts) AS user_topic_daily_ts,
+      AVG(adjusted_watch_party_ts) AS avg_user_room_ts,
+      COUNT(DISTINCT room_id) AS rooms
+    FROM d11_stitch.user_watch_party_time_spent_daily
+    GROUP BY 1, 2, 3
+  )
+  GROUP BY 1, 2
+)
+GROUP BY 1;
+```
+
 ### `watch_party_user_reactions`
 User-level watch party reaction data.
 
